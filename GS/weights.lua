@@ -77,6 +77,7 @@ function CalculateClasicItemScore(ItemLink, Tooltip, Red, Green, Blue)
 		end
 end
 
+if not BonusScanner then return 0 end  -- Добавить в начале функции Calculate_GearScoreClasicScore
 function Calculate_GearScoreClasicScore(ItemLink, Class, Index)
 	local ItemName, ItemLink, ItemRarity, ItemLevel, ItemMinLevel, ItemType, ItemSubType, ItemStackCount, ItemEquipLoc, ItemTexture = GetItemInfo(ItemLink)
 	local GS_TempBonuses = BonusScanner:ScanItem(ItemLink)
