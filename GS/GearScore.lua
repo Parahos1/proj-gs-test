@@ -1436,35 +1436,40 @@ end
 -- ===== [ Начало вставки ] =====
 -- Создаем текстовые метки для слотов
 local function CreateGearScoreTextOnSlots()
+    print("Поиск слотов...")
     for slotName, slotID in pairs({
-        HeadSlot = 1, NeckSlot = 2, ShoulderSlot = 3, BackSlot = 15, ChestSlot = 5,
-        ShirtSlot = 4, TabardSlot = 19, WristSlot = 9, HandsSlot = 10, WaistSlot = 6,
-        LegsSlot = 7, FeetSlot = 8, Finger0Slot = 11, Finger1Slot = 12, Trinket0Slot = 13,
-        Trinket1Slot = 14, MainHandSlot = 16, SecondaryHandSlot = 17, RangedSlot = 18
+        HeadSlot = 1, NeckSlot = 2, -- ... остальные слоты
     }) do
         local slot = _G["Character"..slotName]
-        if slot and not slot.GearScoreText then
-            slot.GearScoreText = slot:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
-            slot.GearScoreText:SetPoint("BOTTOMRIGHT", slot, -2, 2)
-            slot.GearScoreText:SetTextColor(1, 0.82, 0) -- Золотистый цвет
+        if slot then
+            print("Найден слот:", slotName)
+            if not slot.GearScoreText then
+                slot.GearScoreText = slot:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+                slot.GearScoreText:SetPoint("BOTTOMRIGHT", slot, -2, 2)
+                slot.GearScoreText:SetText("TEST")
+                slot.GearScoreText:SetTextColor(1, 0, 0) -- Красный для заметности
+            end
+        else
+            print("Слот не найден:", slotName)
         end
     end
 end
 
 -- Обновляем GS на слотах
 local function UpdateGearScoreOnSlots()
+    print("Обновление слотов...")
     for slotName, slotID in pairs({
-        HeadSlot = 1, NeckSlot = 2, ShoulderSlot = 3, BackSlot = 15, ChestSlot = 5,
-        ShirtSlot = 4, TabardSlot = 19, WristSlot = 9, HandsSlot = 10, WaistSlot = 6,
-        LegsSlot = 7, FeetSlot = 8, Finger0Slot = 11, Finger1Slot = 12, Trinket0Slot = 13,
-        Trinket1Slot = 14, MainHandSlot = 16, SecondaryHandSlot = 17, RangedSlot = 18
+        HeadSlot = 1, -- ... остальные слоты
     }) do
         local slot = _G["Character"..slotName]
         if slot and slot.GearScoreText then
             local itemLink = GetInventoryItemLink("player", slotID)
+            print(string.format("Слот %s (%d): %s", slotName, slotID, itemLink or "пусто"))
+            
             if itemLink then
-                local _, _, _, gearScore = GearScore_GetScore(itemLink)
-                slot.GearScoreText:SetText(gearScore or "")
+                local gs = GearScore_GetScore(itemLink)
+                print("GearScore возвращает:", gs)
+                slot.GearScoreText:SetText(gs or "?")
             else
                 slot.GearScoreText:SetText("")
             end
@@ -1474,6 +1479,7 @@ end
 
 -- Хук на открытие персонажа
 hooksecurefunc("ToggleCharacter", function()
+    print("Открытие окна персонажа")
     CreateGearScoreTextOnSlots()
     UpdateGearScoreOnSlots()
 end)
@@ -1492,8 +1498,21 @@ CreateGearScoreTextOnSlots()
 UpdateGearScoreOnSlots()
 -- ===== [ Конец вставки ] =====
 
-end -- <- Этот end должен быть САМЫМ ПОСЛЕДНИМ в файле
+local function ForceCreateTexts()
+    for i = 1, 19 do
+        local slot = _G["Character"..i.."Slot"] or _G["CharacterFrame"..i]
+        if slot and not slot.GearScoreText then
+            slot.GearScoreText = CreateFrame("Frame", nil, slot)
+            local text = slot:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            text:SetPoint("BOTTOMRIGHT", -2, 2)
+            text:SetText("TEST")
+            slot.GearScoreText = text
+        end
+    end
+end
 
+end -- <- Этот end должен быть САМЫМ ПОСЛЕДНИМ в файле
+print("Аддон загружен! Проверка работы...")
 
 hooksecurefunc("SetItemRef",GearScoreSetItemRef)
 
@@ -1540,3 +1559,4 @@ SlashCmdList["MY4SCRIPT"] = GS_BANSET
 SLASH_MY4SCRIPT1 = "/gsban"
 GS_DisplayFrame:Hide()
 LibQTip = LibStub("LibQTipClick-1.1")
+
