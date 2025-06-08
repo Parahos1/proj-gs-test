@@ -1431,8 +1431,9 @@ function GS_DecodeStats(Name)
 			end
 		end
 		return StatTable, RangeCheck
-		
-		-- ===== [ Начало вставки ] =====
+end
+
+-- ===== [ Начало вставки ] =====
 -- Создаем текстовые метки для слотов
 local function CreateGearScoreTextOnSlots()
     for slotName, slotID in pairs({
@@ -1492,9 +1493,6 @@ UpdateGearScoreOnSlots()
 -- ===== [ Конец вставки ] =====
 
 end -- <- Этот end должен быть САМЫМ ПОСЛЕДНИМ в файле
-end
-
-
 
 
 hooksecurefunc("SetItemRef",GearScoreSetItemRef)
