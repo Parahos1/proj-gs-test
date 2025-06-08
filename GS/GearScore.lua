@@ -1465,8 +1465,8 @@ local function UpdateGearScoreOnSlots()
         if slot and slot.GearScoreText then
             local itemLink = GetInventoryItemLink("player", GetInventorySlotInfo(slotName))
             if itemLink then
-                local _, _, _, gearScore = GearScore_GetItemScore(itemLink)  -- Важно: используем GetItemScore вместо GetScore
-                slot.GearScoreText:SetText(gearScore or "?")
+                local gearScore = select(2, GearScore_GetItemScore(itemLink)) -- Берем RAW score (целое число)
+                slot.GearScoreText:SetText(gearScore and floor(gearScore) or "") -- Округляем вниз
             else
                 slot.GearScoreText:SetText("")
             end
