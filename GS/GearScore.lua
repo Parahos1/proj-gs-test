@@ -1431,15 +1431,8 @@ function GS_DecodeStats(Name)
 			end
 		end
 		return StatTable, RangeCheck
-end
-
--- =============================================
--- GearScore Display on Character Frame (ICON version)
--- =============================================
-
-local ADDON_NAME, ns = ...
-local GearScore_GetScore = GearScore_GetScore
-
+		
+		-- ===== [ Начало вставки ] =====
 -- Создаем текстовые метки для слотов
 local function CreateGearScoreTextOnSlots()
     for slotName, slotID in pairs({
@@ -1452,7 +1445,7 @@ local function CreateGearScoreTextOnSlots()
         if slot and not slot.GearScoreText then
             slot.GearScoreText = slot:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
             slot.GearScoreText:SetPoint("BOTTOMRIGHT", slot, -2, 2)
-            slot.GearScoreText:SetTextColor(1, 1, 0) -- Желтый
+            slot.GearScoreText:SetTextColor(1, 0.82, 0) -- Золотистый цвет
         end
     end
 end
@@ -1469,7 +1462,7 @@ local function UpdateGearScoreOnSlots()
         if slot and slot.GearScoreText then
             local itemLink = GetInventoryItemLink("player", slotID)
             if itemLink then
-                local _, _, _, gearScore = GearScore_GetScore(itemLink) -- Исправлено: берем 4-й аргумент
+                local _, _, _, gearScore = GearScore_GetScore(itemLink)
                 slot.GearScoreText:SetText(gearScore or "")
             else
                 slot.GearScoreText:SetText("")
@@ -1493,11 +1486,14 @@ eventFrame:SetScript("OnEvent", function()
     end
 end)
 
--- Обновляем при загрузке (на случай, если окно уже открыто)
-if CharacterFrame:IsVisible() then
-    CreateGearScoreTextOnSlots()
-    UpdateGearScoreOnSlots()
+-- Первичная инициализация
+CreateGearScoreTextOnSlots()
+UpdateGearScoreOnSlots()
+-- ===== [ Конец вставки ] =====
+
+end -- <- Этот end должен быть САМЫМ ПОСЛЕДНИМ в файле
 end
+
 
 
 
