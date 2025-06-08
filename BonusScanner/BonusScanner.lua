@@ -1,4 +1,4 @@
-﻿--------------------------------------------------
+--------------------------------------------------
 -- BonusScanner Continued v5.2
 -- Originally developed by Crowley <crowley@headshot.de>
 -- performance improvements by Archarodim
@@ -1448,3 +1448,20 @@ if not WhisperParam then
 				 end
  end
 end --end function
+
+local function UpdateWithBonusScanner()
+    if not BonusScanner or not BonusScanner.GetScore then return end
+    
+    for slotName in pairs(slots) do
+        local slot = _G["Character"..slotName]
+        if slot and slot.GearScoreText then
+            local bonusScore = BonusScanner.GetScore(slotName)
+            if bonusScore and bonusScore > 0 then
+                slot.GearScoreText:SetText(
+                    format("%d (+%d)", 
+                    tonumber(slot.GearScoreText:GetText()) or 0,
+                    bonusScore)
+            end
+        end
+    end
+end
