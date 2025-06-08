@@ -1496,6 +1496,7 @@ local function UpdatePaperDollItemGS(self)
                 self.GSText:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -2, 2)
                 self.GSText:SetTextColor(1, 1, 0) -- Жёлтый цвет (можно изменить)
             end
+			print(itemLink, gearScore)
             self.GSText:SetText(floor(gearScore + 0.5)) -- Округляем до целого числа
             self.GSText:Show()
         elseif self.GSText then
@@ -1565,6 +1566,7 @@ local function UpdateGearScoreOnSlots()
                 local _, _, _, gearScore = GearScore_GetScore(itemLink)
                 slot.GearScoreText:SetText(gearScore or "")
             else
+			print(itemLink, gearScore)
                 slot.GearScoreText:SetText("")
             end
         end
@@ -1585,3 +1587,67 @@ frame:SetScript("OnEvent", function()
         UpdateGearScoreOnSlots()
     end
 end)
+
+
+
+
+
+
+
+
+----- НАЧАЛО ВСТАВКИ -----
+-- Создаем текстовые метки для GearScore на слотах
+local function CreateGearScoreTextOnSlots()
+    for slotName, slotID in pairs({
+        HeadSlot = 1, NeckSlot = 2, ShoulderSlot = 3, BackSlot = 15, ChestSlot = 5,
+        ShirtSlot = 4, TabardSlot = 19, WristSlot = 9, HandsSlot = 10, WaistSlot = 6,
+        LegsSlot = 7, FeetSlot = 8, Finger0Slot = 11, Finger1Slot = 12, Trinket0Slot = 13,
+        Trinket1Slot = 14, MainHandSlot = 16, SecondaryHandSlot = 17, RangedSlot = 18
+    }) do
+        local slot = _G["Character"..slotName]
+        if slot and not slot.GearScoreText then
+            slot.GearScoreText = slot:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+            slot.GearScoreText:SetPoint("BOTTOMRIGHT", slot, -2, 2)
+			print(itemLink, gearScore)
+            slot.GearScoreText:SetTextColor(1, 1, 0) -- Желтый
+        end
+    end
+end
+
+-- Обновляем GS на слотах
+local function UpdateGearScoreOnSlots()
+    for slotName, slotID in pairs({
+        HeadSlot = 1, NeckSlot = 2, ShoulderSlot = 3, BackSlot = 15, ChestSlot = 5,
+        ShirtSlot = 4, TabardSlot = 19, WristSlot = 9, HandsSlot = 10, WaistSlot = 6,
+        LegsSlot = 7, FeetSlot = 8, Finger0Slot = 11, Finger1Slot = 12, Trinket0Slot = 13,
+        Trinket1Slot = 14, MainHandSlot = 16, SecondaryHandSlot = 17, RangedSlot = 18
+    }) do
+        local slot = _G["Character"..slotName]
+        if slot and slot.GearScoreText then
+            local itemLink = GetInventoryItemLink("player", slotID)
+            if itemLink then
+                local gearScore = GearScore_GetScore(itemLink)
+                slot.GearScoreText:SetText(gearScore or "")
+            else
+			print(itemLink, gearScore)
+                slot.GearScoreText:SetText("")
+            end
+        end
+    end
+end
+
+-- Обновляем при открытии персонажа
+hooksecurefunc("ToggleCharacter", function()
+    CreateGearScoreTextOnSlots()
+    UpdateGearScoreOnSlots()
+end)
+
+-- Обновляем при смене экипировки
+local eventFrame = CreateFrame("Frame")
+eventFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+eventFrame:SetScript("OnEvent", function()
+    if CharacterFrame:IsVisible() then
+        UpdateGearScoreOnSlots()
+    end
+end)
+----- КОНЕЦ ВСТАВКИ -----
