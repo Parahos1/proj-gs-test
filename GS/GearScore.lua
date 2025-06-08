@@ -1433,6 +1433,72 @@ function GS_DecodeStats(Name)
 		return StatTable, RangeCheck
 end
 
+-- =============================================
+-- GearScore Display on Character Frame (ICON version)
+-- =============================================
+
+local ADDON_NAME, ns = ...
+local GearScore_GetScore = GearScore_GetScore
+
+-- Создаем текстовые метки для слотов
+local function CreateGearScoreTextOnSlots()
+    for slotName, slotID in pairs({
+        HeadSlot = 1, NeckSlot = 2, ShoulderSlot = 3, BackSlot = 15, ChestSlot = 5,
+        ShirtSlot = 4, TabardSlot = 19, WristSlot = 9, HandsSlot = 10, WaistSlot = 6,
+        LegsSlot = 7, FeetSlot = 8, Finger0Slot = 11, Finger1Slot = 12, Trinket0Slot = 13,
+        Trinket1Slot = 14, MainHandSlot = 16, SecondaryHandSlot = 17, RangedSlot = 18
+    }) do
+        local slot = _G["Character"..slotName]
+        if slot and not slot.GearScoreText then
+            slot.GearScoreText = slot:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+            slot.GearScoreText:SetPoint("BOTTOMRIGHT", slot, -2, 2)
+            slot.GearScoreText:SetTextColor(1, 1, 0) -- Желтый
+        end
+    end
+end
+
+-- Обновляем GS на слотах
+local function UpdateGearScoreOnSlots()
+    for slotName, slotID in pairs({
+        HeadSlot = 1, NeckSlot = 2, ShoulderSlot = 3, BackSlot = 15, ChestSlot = 5,
+        ShirtSlot = 4, TabardSlot = 19, WristSlot = 9, HandsSlot = 10, WaistSlot = 6,
+        LegsSlot = 7, FeetSlot = 8, Finger0Slot = 11, Finger1Slot = 12, Trinket0Slot = 13,
+        Trinket1Slot = 14, MainHandSlot = 16, SecondaryHandSlot = 17, RangedSlot = 18
+    }) do
+        local slot = _G["Character"..slotName]
+        if slot and slot.GearScoreText then
+            local itemLink = GetInventoryItemLink("player", slotID)
+            if itemLink then
+                local _, _, _, gearScore = GearScore_GetScore(itemLink) -- Исправлено: берем 4-й аргумент
+                slot.GearScoreText:SetText(gearScore or "")
+            else
+                slot.GearScoreText:SetText("")
+            end
+        end
+    end
+end
+
+-- Хук на открытие персонажа
+hooksecurefunc("ToggleCharacter", function()
+    CreateGearScoreTextOnSlots()
+    UpdateGearScoreOnSlots()
+end)
+
+-- Обновляем при смене экипировки
+local eventFrame = CreateFrame("Frame")
+eventFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+eventFrame:SetScript("OnEvent", function()
+    if CharacterFrame:IsVisible() then
+        UpdateGearScoreOnSlots()
+    end
+end)
+
+-- Обновляем при загрузке (на случай, если окно уже открыто)
+if CharacterFrame:IsVisible() then
+    CreateGearScoreTextOnSlots()
+    UpdateGearScoreOnSlots()
+end
+
 
 
 hooksecurefunc("SetItemRef",GearScoreSetItemRef)
@@ -1480,174 +1546,3 @@ SlashCmdList["MY4SCRIPT"] = GS_BANSET
 SLASH_MY4SCRIPT1 = "/gsban"
 GS_DisplayFrame:Hide()
 LibQTip = LibStub("LibQTipClick-1.1")
-
-
-
--- Функция для отображения GS на предметах в окне персонажа
-local function UpdatePaperDollItemGS(self)
-    local slot = self:GetID()
-    local itemLink = GetInventoryItemLink("player", slot)
-    
-    if itemLink then
-        local _, _, _, gearScore = GearScore_GetItemScore(itemLink)
-        if gearScore and gearScore > 0 then
-            if not self.GSText then
-                self.GSText = self:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-                self.GSText:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -2, 2)
-                self.GSText:SetTextColor(1, 1, 0) -- Жёлтый цвет (можно изменить)
-            end
-			print(itemLink, gearScore)
-            self.GSText:SetText(floor(gearScore + 0.5)) -- Округляем до целого числа
-            self.GSText:Show()
-        elseif self.GSText then
-            self.GSText:Hide()
-        end
-    elseif self.GSText then
-        self.GSText:Hide()
-    end
-end
-
--- Обновляем все слоты в окне персонажа
-local function UpdateAllPaperDollGS()
-    for i = 1, 19 do
-        if _G["CharacterFrame"] and _G["CharacterFrame"]:IsVisible() then
-            local slot = _G["CharacterFrame"].slotButtons and _G["CharacterFrame"].slotButtons[i]
-            if slot then
-                UpdatePaperDollItemGS(slot)
-            end
-        end
-    end
-end
-
--- Создаем обработчики событий
-local f = CreateFrame("Frame")
-f:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
-f:RegisterEvent("PLAYER_ENTERING_WORLD")
-f:RegisterEvent("UNIT_INVENTORY_CHANGED")
-f:SetScript("OnEvent", function(self, event, ...)
-    if event == "PLAYER_EQUIPMENT_CHANGED" or event == "UNIT_INVENTORY_CHANGED" or event == "PLAYER_ENTERING_WORLD" then
-        UpdateAllPaperDollGS()
-    end
-end)
-
--- Обработчик для открытия окна персонажа
-CharacterFrame:HookScript("OnShow", function()
-    UpdateAllPaperDollGS()
-end)
-
--- Обновляем GS при наведении на предмет (дополнительно)
-hooksecurefunc("PaperDollItemSlotButton_Update", function(button)
-    if CharacterFrame:IsVisible() then
-        UpdatePaperDollItemGS(button)
-    end
-end)
-
--- Создаем текстовые метки для каждого слота
-local function CreateGearScoreTextOnSlots()
-    for i = 1, 19 do  -- 19 слотов инвентаря (CharacterFrame)
-        local slot = _G["CharacterFrame" .. i] or _G["Character" .. i .. "Slot"]
-        if slot then
-            if not slot.GearScoreText then
-                slot.GearScoreText = slot:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
-                slot.GearScoreText:SetPoint("BOTTOMRIGHT", slot, "BOTTOMRIGHT", -2, 2)
-                slot.GearScoreText:SetTextColor(1, 1, 0)  -- Желтый цвет
-            end
-        end
-    end
-end
-
--- Обновляем текст GS при открытии окна персонажа
-local function UpdateGearScoreOnSlots()
-    for i = 1, 19 do
-        local slot = _G["CharacterFrame" .. i] or _G["Character" .. i .. "Slot"]
-        if slot and slot.GearScoreText then
-            local itemLink = GetInventoryItemLink("player", i)
-            if itemLink then
-                local _, _, _, gearScore = GearScore_GetScore(itemLink)
-                slot.GearScoreText:SetText(gearScore or "")
-            else
-			print(itemLink, gearScore)
-                slot.GearScoreText:SetText("")
-            end
-        end
-    end
-end
-
--- Хук на открытие окна персонажа
-hooksecurefunc("ToggleCharacter", function()
-    CreateGearScoreTextOnSlots()
-    UpdateGearScoreOnSlots()
-end)
-
--- Обновляем GS при смене предметов
-local frame = CreateFrame("Frame")
-frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
-frame:SetScript("OnEvent", function()
-    if CharacterFrame:IsVisible() then
-        UpdateGearScoreOnSlots()
-    end
-end)
-
-
-
-
-
-
-
-
------ НАЧАЛО ВСТАВКИ -----
--- Создаем текстовые метки для GearScore на слотах
-local function CreateGearScoreTextOnSlots()
-    for slotName, slotID in pairs({
-        HeadSlot = 1, NeckSlot = 2, ShoulderSlot = 3, BackSlot = 15, ChestSlot = 5,
-        ShirtSlot = 4, TabardSlot = 19, WristSlot = 9, HandsSlot = 10, WaistSlot = 6,
-        LegsSlot = 7, FeetSlot = 8, Finger0Slot = 11, Finger1Slot = 12, Trinket0Slot = 13,
-        Trinket1Slot = 14, MainHandSlot = 16, SecondaryHandSlot = 17, RangedSlot = 18
-    }) do
-        local slot = _G["Character"..slotName]
-        if slot and not slot.GearScoreText then
-            slot.GearScoreText = slot:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
-            slot.GearScoreText:SetPoint("BOTTOMRIGHT", slot, -2, 2)
-			print(itemLink, gearScore)
-            slot.GearScoreText:SetTextColor(1, 1, 0) -- Желтый
-        end
-    end
-end
-
--- Обновляем GS на слотах
-local function UpdateGearScoreOnSlots()
-    for slotName, slotID in pairs({
-        HeadSlot = 1, NeckSlot = 2, ShoulderSlot = 3, BackSlot = 15, ChestSlot = 5,
-        ShirtSlot = 4, TabardSlot = 19, WristSlot = 9, HandsSlot = 10, WaistSlot = 6,
-        LegsSlot = 7, FeetSlot = 8, Finger0Slot = 11, Finger1Slot = 12, Trinket0Slot = 13,
-        Trinket1Slot = 14, MainHandSlot = 16, SecondaryHandSlot = 17, RangedSlot = 18
-    }) do
-        local slot = _G["Character"..slotName]
-        if slot and slot.GearScoreText then
-            local itemLink = GetInventoryItemLink("player", slotID)
-            if itemLink then
-                local gearScore = GearScore_GetScore(itemLink)
-                slot.GearScoreText:SetText(gearScore or "")
-            else
-			print(itemLink, gearScore)
-                slot.GearScoreText:SetText("")
-            end
-        end
-    end
-end
-
--- Обновляем при открытии персонажа
-hooksecurefunc("ToggleCharacter", function()
-    CreateGearScoreTextOnSlots()
-    UpdateGearScoreOnSlots()
-end)
-
--- Обновляем при смене экипировки
-local eventFrame = CreateFrame("Frame")
-eventFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
-eventFrame:SetScript("OnEvent", function()
-    if CharacterFrame:IsVisible() then
-        UpdateGearScoreOnSlots()
-    end
-end)
------ КОНЕЦ ВСТАВКИ -----
