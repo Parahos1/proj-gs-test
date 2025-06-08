@@ -1433,43 +1433,40 @@ function GS_DecodeStats(Name)
 		return StatTable, RangeCheck
 end
 
+
+
+
+
 -- ===== [ Начало вставки ] =====
--- Создаем текстовые метки для слотов
 local function CreateGearScoreTextOnSlots()
-    print("Поиск слотов...")
-    for slotName, slotID in pairs({
-        HeadSlot = 1, NeckSlot = 2, -- ... остальные слоты
+    for _, slotName in ipairs({
+        "Head", "Neck", "Shoulder", "Shirt", "Chest", "Waist", "Legs", "Feet", 
+        "Wrist", "Hands", "Finger0", "Finger1", "Trinket0", "Trinket1", 
+        "Back", "MainHand", "SecondaryHand", "Ranged", "Tabard"
     }) do
-        local slot = _G["Character"..slotName]
-        if slot then
-            print("Найден слот:", slotName)
-            if not slot.GearScoreText then
-                slot.GearScoreText = slot:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-                slot.GearScoreText:SetPoint("BOTTOMRIGHT", slot, -2, 2)
-                slot.GearScoreText:SetText("TEST")
-                slot.GearScoreText:SetTextColor(1, 0, 0) -- Красный для заметности
-            end
-        else
-            print("Слот не найден:", slotName)
+        local slot = _G["Character"..slotName.."Slot"]
+        if slot and not slot.GearScoreText then
+            slot.GearScoreText = slot:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            slot.GearScoreText:SetPoint("BOTTOMRIGHT", slot, -2, 2)
+            slot.GearScoreText:SetTextColor(1, 1, 0)
         end
     end
 end
 
--- Обновляем GS на слотах
 local function UpdateGearScoreOnSlots()
-    print("Обновление слотов...")
     for slotName, slotID in pairs({
-        HeadSlot = 1, -- ... остальные слоты
+        HeadSlot = 1, NeckSlot = 2, ShoulderSlot = 3, ShirtSlot = 4,
+        ChestSlot = 5, WaistSlot = 6, LegsSlot = 7, FeetSlot = 8,
+        WristSlot = 9, HandsSlot = 10, Finger0Slot = 11, Finger1Slot = 12,
+        Trinket0Slot = 13, Trinket1Slot = 14, BackSlot = 15, MainHandSlot = 16,
+        SecondaryHandSlot = 17, RangedSlot = 18, TabardSlot = 19
     }) do
         local slot = _G["Character"..slotName]
         if slot and slot.GearScoreText then
-            local itemLink = GetInventoryItemLink("player", slotID)
-            print(string.format("Слот %s (%d): %s", slotName, slotID, itemLink or "пусто"))
-            
+            local itemLink = GetInventoryItemLink("player", GetInventorySlotInfo(slotName))
             if itemLink then
-                local gs = GearScore_GetScore(itemLink)
-                print("GearScore возвращает:", gs)
-                slot.GearScoreText:SetText(gs or "?")
+                local _, _, _, gearScore = GearScore_GetItemScore(itemLink)  -- Важно: используем GetItemScore вместо GetScore
+                slot.GearScoreText:SetText(gearScore or "?")
             else
                 slot.GearScoreText:SetText("")
             end
@@ -1477,42 +1474,35 @@ local function UpdateGearScoreOnSlots()
     end
 end
 
--- Хук на открытие персонажа
-hooksecurefunc("ToggleCharacter", function()
-    print("Открытие окна персонажа")
-    CreateGearScoreTextOnSlots()
-    UpdateGearScoreOnSlots()
-end)
-
--- Обновляем при смене экипировки
-local eventFrame = CreateFrame("Frame")
-eventFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
-eventFrame:SetScript("OnEvent", function()
-    if CharacterFrame:IsVisible() then
+-- Инициализация при загрузке
+local frame = CreateFrame("Frame")
+frame:RegisterEvent("PLAYER_ENTERING_WORLD")
+frame:SetScript("OnEvent", function(self, event)
+    if event == "PLAYER_ENTERING_WORLD" then
+        self:UnregisterEvent("PLAYER_ENTERING_WORLD")
+        CreateGearScoreTextOnSlots()
         UpdateGearScoreOnSlots()
     end
 end)
 
--- Первичная инициализация
-CreateGearScoreTextOnSlots()
-UpdateGearScoreOnSlots()
--- ===== [ Конец вставки ] =====
+-- Обновление при открытии окна персонажа
+hooksecurefunc("ToggleCharacter", UpdateGearScoreOnSlots)
 
-local function ForceCreateTexts()
-    for i = 1, 19 do
-        local slot = _G["Character"..i.."Slot"] or _G["CharacterFrame"..i]
-        if slot and not slot.GearScoreText then
-            slot.GearScoreText = CreateFrame("Frame", nil, slot)
-            local text = slot:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-            text:SetPoint("BOTTOMRIGHT", -2, 2)
-            text:SetText("TEST")
-            slot.GearScoreText = text
-        end
-    end
-end
+-- Обновление при смене экипировки
+local equipFrame = CreateFrame("Frame")
+equipFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+equipFrame:SetScript("OnEvent", UpdateGearScoreOnSlots)
+-- Временная проверка
+print("GearScore аддон загружен!")
+print("Проверка функции:", GearScore_GetItemScore and "доступна" or "недоступна")
 
-end -- <- Этот end должен быть САМЫМ ПОСЛЕДНИМ в файле
-print("Аддон загружен! Проверка работы...")
+
+
+
+
+
+
+
 
 hooksecurefunc("SetItemRef",GearScoreSetItemRef)
 
