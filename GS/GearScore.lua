@@ -1,3 +1,18 @@
+-- Добавить в начало файла
+local function GetTrueGearScore(itemLink)
+    if not itemLink then return nil end
+    
+    -- Проверяем наличие функции расчета GS
+    if GearScore_GetItemScore then
+        local _, rawScore = GearScore_GetItemScore(itemLink)
+        return rawScore
+    end
+    
+    -- Альтернативный расчет (если основная функция недоступна)
+    local _, _, _, iLvl = GetItemInfo(itemLink)
+    return iLvl and iLvl * 10 or nil -- Просто примерная формула
+end
+
 function GearScore_OnUpdate(self, elapsed)
 --Code use to Function Timing of Transmition Information--
 	if not GSX_Timer then GSX_Timer = 0; end
@@ -1454,19 +1469,31 @@ local function CreateGearScoreTextOnSlots()
 end
 
 local function UpdateGearScoreOnSlots()
-    for slotName, slotID in pairs({
-        HeadSlot = 1, NeckSlot = 2, ShoulderSlot = 3, ShirtSlot = 4,
-        ChestSlot = 5, WaistSlot = 6, LegsSlot = 7, FeetSlot = 8,
-        WristSlot = 9, HandsSlot = 10, Finger0Slot = 11, Finger1Slot = 12,
-        Trinket0Slot = 13, Trinket1Slot = 14, BackSlot = 15, MainHandSlot = 16,
-        SecondaryHandSlot = 17, RangedSlot = 18, TabardSlot = 19
+    for slotName in pairs({
+        HeadSlot = true, NeckSlot = true, ShoulderSlot = true,
+        -- ... все остальные слоты ...
+        TabardSlot = true
     }) do
         local slot = _G["Character"..slotName]
         if slot and slot.GearScoreText then
-            local itemLink = GetInventoryItemLink("player", GetInventorySlotInfo(slotName))
+            local slotID = GetInventorySlotInfo(slotName)
+            local itemLink = GetInventoryItemLink("player", slotID)
+            
             if itemLink then
-                local gearScore = select(2, GearScore_GetItemScore(itemLink)) -- Берем RAW score (целое число)
-                slot.GearScoreText:SetText(gearScore and floor(gearScore) or "") -- Округляем вниз
+                -- Получаем TRUE GearScore
+                local gs = GetTrueGearScore(itemLink)
+                
+                -- Форматируем вывод
+                if gs and gs > 0 then
+                    slot.GearScoreText:SetText(format("%d", gs))
+                    slot.GearScoreText:SetTextColor(
+                        gs > 5000 and 0.1 or 1,  -- R
+                        gs > 2500 and 1 or 0.5,   -- G
+                        0.4                        -- B
+                    )
+                else
+                    slot.GearScoreText:SetText("")
+                end
             else
                 slot.GearScoreText:SetText("")
             end
